@@ -13,11 +13,18 @@ class SalesAnalyzer:
     # ==================== BASIC AGGREGATIONS ====================
     
     def total_sales(self) -> float:
-        """Calculate total sales across all records."""
+        """Calculate total sales across all records.
+        
+        Functional programming: Uses reduce() with lambda for aggregation.
+        Lambda accumulates sales values: (accumulator, record) -> accumulator + record.sales
+        """
         return reduce(lambda acc, r: acc + r.sales, self.records, 0.0)
     
     def total_profit(self) -> float:
-        """Calculate total profit across all records."""
+        """Calculate total profit across all records.
+        
+        Functional programming: Uses reduce() with lambda for aggregation.
+        """
         return reduce(lambda acc, r: acc + r.profit, self.records, 0.0)
     
     def average_sales(self) -> float:
@@ -46,13 +53,19 @@ class SalesAnalyzer:
         return total_discount / len(self.records)
     
     def max_sales(self) -> float:
-        """Find maximum sales in a single order."""
+        """Find maximum sales in a single order.
+        
+        Functional programming: Uses map() to extract sales values, then max() for aggregation.
+        """
         if not self.records:
             return 0.0
         return max(map(lambda r: r.sales, self.records))
     
     def min_profit(self) -> float:
-        """Find minimum profit in a single order."""
+        """Find minimum profit in a single order.
+        
+        Functional programming: Uses map() to extract profit values, then min() for aggregation.
+        """
         if not self.records:
             return 0.0
         return min(map(lambda r: r.profit, self.records))
@@ -60,13 +73,20 @@ class SalesAnalyzer:
     # ==================== GROUPING BY REGION ====================
     
     def sales_by_region(self) -> Dict[str, float]:
-        """Calculate total sales grouped by region."""
-        # Sort by region for groupby
+        """Calculate total sales grouped by region.
+        
+        Functional programming pattern:
+        1. Sort records (required for groupby to work correctly)
+        2. Use itertools.groupby() to group by region
+        3. Use reduce() with lambda to sum sales within each group
+        """
+        # Sort by region - required for groupby to work correctly
         sorted_records = sorted(self.records, key=lambda r: r.region)
         
-        # Group by region and sum sales
+        # Group by region and aggregate using reduce
         result = {}
         for region, group in groupby(sorted_records, key=lambda r: r.region):
+            # Reduce: accumulate sales values using lambda expression
             sales_sum = reduce(lambda acc, r: acc + r.sales, group, 0.0)
             result[region] = sales_sum
         
@@ -351,7 +371,10 @@ class SalesAnalyzer:
     # ==================== ADVANCED OPERATIONS ====================
     
     def orders_with_high_discount(self, threshold: float = 0.2) -> List[SalesRecord]:
-        """Find orders with discount greater than threshold."""
+        """Find orders with discount greater than threshold.
+        
+        Functional programming: Uses filter() with lambda expression to select records.
+        """
         return list(filter(lambda r: r.discount > threshold, self.records))
     
     def count_high_discount_orders(self, threshold: float = 0.2) -> int:
@@ -359,7 +382,10 @@ class SalesAnalyzer:
         return len(self.orders_with_high_discount(threshold))
     
     def profit_margins(self) -> List[float]:
-        """Calculate profit margins for all records."""
+        """Calculate profit margins for all records.
+        
+        Functional programming: Uses map() with lambda to transform each record.
+        """
         return list(map(lambda r: r.get_profit_margin(), self.records))
     
     def average_profit_margin(self) -> float:

@@ -25,11 +25,19 @@ class ThreadSafeQueue:
         self._maxsize = maxsize
     
     def put(self, item: Any, block: bool = True, timeout: Optional[float] = None) -> None:
-        """Put item into queue. Blocks if full (unless block=False)."""
+        """Put item into queue. Blocks if full (unless block=False).
+        
+        Thread synchronization: queue.Queue handles internal locking.
+        When queue is full, this blocks until space is available (wait/notify mechanism).
+        """
         self._queue.put(item, block=block, timeout=timeout)
     
     def get(self, block: bool = True, timeout: Optional[float] = None) -> Any:
-        """Get item from queue. Blocks if empty (unless block=False)."""
+        """Get item from queue. Blocks if empty (unless block=False).
+        
+        Thread synchronization: queue.Queue handles internal locking.
+        When queue is empty, this blocks until item is available (wait/notify mechanism).
+        """
         return self._queue.get(block=block, timeout=timeout)
     
     def qsize(self) -> int:
@@ -143,31 +151,42 @@ class Consumer:
         try:
             self._output_file.parent.mkdir(parents=True, exist_ok=True)
             
+            # Main consumer loop - continues until stop_event is set
             while not self._stop_event.is_set():
                 try:
+                    # Blocking get with timeout - waits up to 1 second for items
+                    # This allows checking stop_event periodically
                     item = self._queue.get(timeout=1.0)
                     
-                    if item is None:  # Sentinel: production complete
+                    # Sentinel value (None) signals all producers have finished
+                    # Each producer puts one None when done, consumers pass it along
+                    if item is None:
                         self._queue.task_done()
                         try:
-                            self._queue.put(None, block=False)  # Pass to other consumers
+                            # Put None back for other consumers to see
+                            self._queue.put(None, block=False)
                         except queue.Full:
-                            pass
+                            pass  # Other consumers already have the sentinel
                         break
                     
+                    # Process item (default: convert to uppercase)
                     processed = self._process_item(item)
                     
+                    # Thread-safe file writing using file lock
                     with self._file_lock:
                         with open(self._output_file, 'a', encoding='utf-8') as f:
                             f.write(processed + '\n')
                     
+                    # Thread-safe counter update
                     with self._lock:
                         self._items_consumed += 1
                     
                     print(f"[{self._name}] Consumed and processed: {item} -> {processed}")
+                    # Mark task as done for queue.join() tracking
                     self._queue.task_done()
                     
                 except queue.Empty:
+                    # Timeout occurred - continue loop to check stop_event
                     continue
         except Exception as e:
             print(f"[{self._name}] Unexpected error: {e}")
@@ -232,19 +251,22 @@ class ProducerConsumerOrchestrator:
     
     def run(self) -> None:
         """Start all producers/consumers and wait for completion."""
+        # Start consumers first so they're ready when producers start producing
         for consumer in self._consumers:
             consumer.start()
+        # Start all producers
         for producer in self._producers:
             producer.start()
+        # Wait for all producers to complete (they'll put None sentinels when done)
         for producer in self._producers:
             producer.join()
-        # Wait a bit for consumers to process remaining items (excluding None sentinels)
+        # Brief wait for consumers to process remaining items in queue
         time.sleep(0.5)
-        # All producers done - signal consumers to stop
-        # They'll exit even if they timeout before seeing None sentinel
+        # Signal all consumers to stop (handles case where consumer times out before seeing None)
+        # This ensures clean shutdown even if sentinel mechanism has issues
         for consumer in self._consumers:
             consumer._stop_event.set()
-        # Wait for consumers to finish
+        # Wait for all consumer threads to finish
         for consumer in self._consumers:
             consumer.join()
     
