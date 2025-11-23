@@ -402,7 +402,7 @@ class TestProducerConsumerOrchestrator:
             # Check stats
             stats = orchestrator.get_stats()
             assert stats['total_produced'] == 4
-            assert stats['total_consumed'] == 4  # Should consume all items
+            assert stats['total_consumed'] == 4
             assert stats['producers'] == 2
             assert stats['consumers'] == 2
         finally:
