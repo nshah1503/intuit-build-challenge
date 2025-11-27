@@ -8,7 +8,7 @@ This repository contains solutions for Intuit's build challenge assignment. Each
 intuit-build-challenge/
 ├── challenge1/          # Producer-Consumer Pattern Implementation
 ├── challenge2/          # Sales Data Analysis with Functional Programming
-└── README.md           # This file
+└── README.md          
 ```
 
 ## Challenges
