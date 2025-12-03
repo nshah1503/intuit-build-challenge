@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 
 @dataclass
@@ -38,7 +38,7 @@ class SalesRecord:
         
         for fmt in date_formats:
             try:
-                order_date = datetime.strptime(data['Order Date'], fmt)
+                order_date = datetime.strptime(data['Order Date'], fmt) # parses the date time string
                 ship_date = datetime.strptime(data['Ship Date'], fmt)
                 break
             except ValueError:

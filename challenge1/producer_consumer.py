@@ -64,11 +64,12 @@ class ThreadSafeQueue:
 class Producer:
     """Producer reads from file and puts items into queue."""
     
-    def __init__(self, queue: ThreadSafeQueue, file_path: str, name: str = "Producer"):
+    def __init__(self, queue: ThreadSafeQueue, file_path: str, name: str = "Producer", thread_name: Optional[str] = None):
         """Initialize producer with queue, file path, and name."""
         self._queue = queue
         self._file_path = Path(file_path)
         self._name = name
+        self._thread_name = thread_name if thread_name else f"ProducerThread-{name}"
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._items_produced = 0
@@ -91,7 +92,8 @@ class Producer:
                 self._queue.put(line)
                 with self._lock:
                     self._items_produced += 1
-                print(f"[{self._name}] Produced: {line}")
+                current_thread_name = threading.current_thread().name
+                print(f"[{self._name}] [Thread: {current_thread_name}] Produced: {line}")
         except FileNotFoundError as e:
             print(f"[{self._name}] Error: {e}")
         except Exception as e:
@@ -108,7 +110,7 @@ class Producer:
             raise RuntimeError("Producer is already running")
         
         self._stop_event.clear()
-        self._thread = threading.Thread(target=self._produce, daemon=True)
+        self._thread = threading.Thread(target=self._produce, daemon=True, name=self._thread_name)
         self._thread.start()
     
     def stop(self) -> None:
@@ -131,11 +133,12 @@ class Producer:
 class Consumer:
     """Consumer gets items from queue, processes them, and writes to file."""
     
-    def __init__(self, queue: ThreadSafeQueue, output_file: str, name: str = "Consumer"):
+    def __init__(self, queue: ThreadSafeQueue, output_file: str, name: str = "Consumer", thread_name: Optional[str] = None):
         """Initialize consumer with queue, output file, and name."""
         self._queue = queue
         self._output_file = Path(output_file)
         self._name = name
+        self._thread_name = thread_name if thread_name else f"ConsumerThread-{name}"
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._items_consumed = 0
@@ -181,7 +184,8 @@ class Consumer:
                     with self._lock:
                         self._items_consumed += 1
                     
-                    print(f"[{self._name}] Consumed and processed: {item} -> {processed}")
+                    current_thread_name = threading.current_thread().name
+                    print(f"[{self._name}] [Thread: {current_thread_name}] Consumed and processed: {item} -> {processed}")
                     # Mark task as done for queue.join() tracking
                     self._queue.task_done()
                     
@@ -201,7 +205,7 @@ class Consumer:
         if self._output_file.exists():
             self._output_file.unlink()
         
-        self._thread = threading.Thread(target=self._consume, daemon=True)
+        self._thread = threading.Thread(target=self._consume, daemon=True, name=self._thread_name)
         self._thread.start()
     
     def stop(self) -> None:
@@ -231,20 +235,20 @@ class ProducerConsumerOrchestrator:
         self._consumers: list[Consumer] = []
         self._lock = threading.Lock()
     
-    def add_producer(self, file_path: str, name: Optional[str] = None) -> Producer:
+    def add_producer(self, file_path: str, name: Optional[str] = None, thread_name: Optional[str] = None) -> Producer:
         """Add producer. Returns Producer instance."""
         if name is None:
             name = f"Producer-{len(self._producers) + 1}"
-        producer = Producer(self._queue, file_path, name)
+        producer = Producer(self._queue, file_path, name, thread_name=thread_name)
         with self._lock:
             self._producers.append(producer)
         return producer
     
-    def add_consumer(self, output_file: str, name: Optional[str] = None) -> Consumer:
+    def add_consumer(self, output_file: str, name: Optional[str] = None, thread_name: Optional[str] = None) -> Consumer:
         """Add consumer. Returns Consumer instance."""
         if name is None:
             name = f"Consumer-{len(self._consumers) + 1}"
-        consumer = Consumer(self._queue, output_file, name)
+        consumer = Consumer(self._queue, output_file, name, thread_name=thread_name)
         with self._lock:
             self._consumers.append(consumer)
         return consumer

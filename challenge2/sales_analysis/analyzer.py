@@ -81,7 +81,7 @@ class SalesAnalyzer:
         3. Use reduce() with lambda to sum sales within each group
         """
         # Sort by region - required for groupby to work correctly
-        sorted_records = sorted(self.records, key=lambda r: r.region)
+        sorted_records = sorted(self.records, key=lambda r: r.region) #nlogn op
         
         # Group by region and aggregate using reduce
         result = {}

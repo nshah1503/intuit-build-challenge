@@ -1,5 +1,7 @@
-fig
+apple
+banana
+orange
 grape
-honeydew
 kiwi
-lemon
+mango
+strawberry

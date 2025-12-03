@@ -9,7 +9,6 @@ import sys
 import os
 from pathlib import Path
 
-# Add parent directory to path to import producer_consumer
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from producer_consumer import ProducerConsumerOrchestrator
@@ -23,26 +22,23 @@ def create_sample_input_file(file_path: str, content: list[str]) -> None:
 
 
 def main():
-    """Main example function."""
-    # Create example directory if it doesn't exist
+    """Entry Point"""
     example_dir = Path(__file__).parent
     example_dir.mkdir(exist_ok=True)
     
-    # Create sample input files
     input_file1 = example_dir / "input1.txt"
     input_file2 = example_dir / "input2.txt"
     output_file1 = example_dir / "output1.txt"
     output_file2 = example_dir / "output2.txt"
     
-    # Create sample data
     create_sample_input_file(
         str(input_file1),
-        ["apple", "banana", "cherry", "date", "elderberry"]
+        ["carrot", "broccoli", "spinach", "tomato", "cucumber", "pepper", "lettuce"]
     )
     
     create_sample_input_file(
         str(input_file2),
-        ["fig", "grape", "honeydew", "kiwi", "lemon"]
+        ["apple", "banana", "orange", "grape", "kiwi", "mango", "strawberry"]
     )
     
     print("=" * 60)
@@ -58,16 +54,13 @@ def main():
     print("Starting producer-consumer processing...")
     print("=" * 60 + "\n")
     
-    # Create orchestrator with queue size of 5
     orchestrator = ProducerConsumerOrchestrator(queue_size=5)
     
-    # Add producers
-    orchestrator.add_producer(str(input_file1), "Producer-1")
-    orchestrator.add_producer(str(input_file2), "Producer-2")
+    orchestrator.add_producer(str(input_file1), "Producer-1", thread_name="VegetableThread")
+    orchestrator.add_producer(str(input_file2), "Producer-2", thread_name="FruitThread")
     
-    # Add consumers
-    orchestrator.add_consumer(str(output_file1), "Consumer-1")
-    orchestrator.add_consumer(str(output_file2), "Consumer-2")
+    orchestrator.add_consumer(str(output_file1), "Consumer-1", thread_name="ProcessorThread-1")
+    orchestrator.add_consumer(str(output_file2), "Consumer-2", thread_name="ProcessorThread-2")
     
     # Run the orchestrator
     orchestrator.run()

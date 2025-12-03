@@ -70,7 +70,7 @@ Total Sales by Region:
 
 ```
 challenge2/
-├── sales_data.csv          # Dataset (included)
+├── sales_data.csv          
 ├── main.py                 # Entry point
 ├── sales_analysis/         # Analysis package
 │   ├── models.py           # Data models

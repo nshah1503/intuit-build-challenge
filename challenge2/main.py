@@ -195,15 +195,44 @@ def run_all_analyses(csv_path: str):
 
 
 def main():
+    # Check for interactive mode
+    if len(sys.argv) > 1 and sys.argv[1] in ["--interactive", "-i"]:
+        # Import and run interactive CLI
+        from interactive_cli import InteractiveCLI
+        from sales_analysis.csv_reader import read_sales_data
+        from sales_analysis.analyzer import SalesAnalyzer
+        
+        csv_path = sys.argv[2] if len(sys.argv) > 2 else str(Path(__file__).parent / "sales_data.csv")
+        
+        if not Path(csv_path).exists():
+            print(f"Error: CSV file not found: {csv_path}", file=sys.stderr)
+            sys.exit(1)
+        
+        try:
+            print("Loading sales data...")
+            records = read_sales_data(csv_path)
+            print(f"Loaded {len(records)} sales records")
+            
+            analyzer = SalesAnalyzer(records)
+            cli = InteractiveCLI(analyzer, len(records))
+            cli.run()
+        except Exception as e:
+            print(f"Error: {e}", file=sys.stderr)
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+        return
+    
+    # Regular mode - run all analyses
     if len(sys.argv) > 1:
         csv_path = sys.argv[1]
     else:
-        # Default to sales_data.csv in the same directory as main.py
-        csv_path = str(Path(__file__).parent / "sales_data.csv")
+        csv_path = str(Path(__file__).parent / "sales_data.csv") # read files data
     
     if not Path(csv_path).exists():
         print(f"Error: CSV file not found: {csv_path}", file=sys.stderr)
         print(f"Usage: python main.py [path_to_csv_file]", file=sys.stderr)
+        print(f"       python main.py --interactive [path_to_csv_file]", file=sys.stderr)
         sys.exit(1)
     
     run_all_analyses(csv_path)

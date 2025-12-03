@@ -1,5 +1,7 @@
-apple
-banana
-cherry
-date
-elderberry
+carrot
+broccoli
+spinach
+tomato
+cucumber
+pepper
+lettuce
